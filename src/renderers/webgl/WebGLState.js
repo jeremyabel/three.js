@@ -2,7 +2,7 @@
  * @author mrdoob / http://mrdoob.com/
  */
 
-import { NotEqualDepth, GreaterDepth, GreaterEqualDepth, EqualDepth, LessEqualDepth, LessDepth, AlwaysDepth, NeverDepth, CullFaceFront, CullFaceBack, CullFaceNone, CustomBlending, MultiplyBlending, SubtractiveBlending, AdditiveBlending, NoBlending, NormalBlending, DoubleSide, BackSide } from '../../constants';
+import { NotEqualDepth, GreaterDepth, GreaterEqualDepth, EqualDepth, LessEqualDepth, LessDepth, AlwaysDepth, NeverDepth, CullFaceFront, CullFaceBack, CullFaceNone, CustomBlending, MultiplyBlending, SubtractiveBlending, AdditiveBlending, NoBlending, NormalBlending } from '../../constants';
 import { Vector4 } from '../../math/Vector4';
 
 function WebGLState( gl, extensions, paramThreeToGL ) {
@@ -383,7 +383,7 @@ function WebGLState( gl, extensions, paramThreeToGL ) {
 		stencilBuffer.setClear( 0 );
 
 		enable( gl.DEPTH_TEST );
-		depthBuffer.setFunc( LessEqualDepth );
+		setDepthFunc( LessEqualDepth );
 
 		setFlipSided( false );
 		setCullFace( CullFaceBack );
@@ -426,7 +426,7 @@ function WebGLState( gl, extensions, paramThreeToGL ) {
 
 	}
 
-	function enableAttributeAndDivisor( attribute, meshPerAttribute ) {
+	function enableAttributeAndDivisor( attribute, meshPerAttribute, extension ) {
 
 		newAttributes[ attribute ] = 1;
 
@@ -438,8 +438,6 @@ function WebGLState( gl, extensions, paramThreeToGL ) {
 		}
 
 		if ( attributeDivisors[ attribute ] !== meshPerAttribute ) {
-
-			var extension = extensions.get( 'ANGLE_instanced_arrays' );
 
 			extension.vertexAttribDivisorANGLE( attribute, meshPerAttribute );
 			attributeDivisors[ attribute ] = meshPerAttribute;
@@ -627,24 +625,53 @@ function WebGLState( gl, extensions, paramThreeToGL ) {
 
 	}
 
-	function setMaterial( material ) {
+	// TODO Deprecate
 
-		material.side === DoubleSide
-			? disable( gl.CULL_FACE )
-			: enable( gl.CULL_FACE );
+	function setColorWrite( colorWrite ) {
 
-		setFlipSided( material.side === BackSide );
+		colorBuffer.setMask( colorWrite );
 
-		material.transparent === true
-			? setBlending( material.blending, material.blendEquation, material.blendSrc, material.blendDst, material.blendEquationAlpha, material.blendSrcAlpha, material.blendDstAlpha, material.premultipliedAlpha )
-			: setBlending( NoBlending );
+	}
 
-		depthBuffer.setFunc( material.depthFunc );
-		depthBuffer.setTest( material.depthTest );
-		depthBuffer.setMask( material.depthWrite );
-		colorBuffer.setMask( material.colorWrite );
+	function setDepthTest( depthTest ) {
 
-		setPolygonOffset( material.polygonOffset, material.polygonOffsetFactor, material.polygonOffsetUnits );
+		depthBuffer.setTest( depthTest );
+
+	}
+
+	function setDepthWrite( depthWrite ) {
+
+		depthBuffer.setMask( depthWrite );
+
+	}
+
+	function setDepthFunc( depthFunc ) {
+
+		depthBuffer.setFunc( depthFunc );
+
+	}
+
+	function setStencilTest( stencilTest ) {
+
+		stencilBuffer.setTest( stencilTest );
+
+	}
+
+	function setStencilWrite( stencilWrite ) {
+
+		stencilBuffer.setMask( stencilWrite );
+
+	}
+
+	function setStencilFunc( stencilFunc, stencilRef, stencilMask ) {
+
+		stencilBuffer.setFunc( stencilFunc, stencilRef, stencilMask );
+
+	}
+
+	function setStencilOp( stencilFail, stencilZFail, stencilZPass ) {
+
+		stencilBuffer.setOp( stencilFail, stencilZFail, stencilZPass );
 
 	}
 
@@ -832,6 +859,20 @@ function WebGLState( gl, extensions, paramThreeToGL ) {
 
 	}
 
+	function texSubImage2D() {
+
+		try {
+
+			gl.texSubImage2D.apply( gl, arguments );
+
+		} catch ( error ) {
+
+			console.error( error );
+
+		}
+
+	}
+
 	//
 
 	function scissor( scissor ) {
@@ -907,7 +948,15 @@ function WebGLState( gl, extensions, paramThreeToGL ) {
 		getCompressedTextureFormats: getCompressedTextureFormats,
 
 		setBlending: setBlending,
-		setMaterial: setMaterial,
+
+		setColorWrite: setColorWrite,
+		setDepthTest: setDepthTest,
+		setDepthWrite: setDepthWrite,
+		setDepthFunc: setDepthFunc,
+		setStencilTest: setStencilTest,
+		setStencilWrite: setStencilWrite,
+		setStencilFunc: setStencilFunc,
+		setStencilOp: setStencilOp,
 
 		setFlipSided: setFlipSided,
 		setCullFace: setCullFace,
@@ -922,6 +971,7 @@ function WebGLState( gl, extensions, paramThreeToGL ) {
 		bindTexture: bindTexture,
 		compressedTexImage2D: compressedTexImage2D,
 		texImage2D: texImage2D,
+		texSubImage2D: texSubImage2D,
 
 		scissor: scissor,
 		viewport: viewport,
